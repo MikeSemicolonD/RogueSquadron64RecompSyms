@@ -75,12 +75,12 @@ RECOMP_HOOK("runInMissionFrame") void on_mission_frame(void) {
     recomp_printf("mission running\n");
 }
 
-// Subscribe to one of the game's hook points; the full list is in the game's docs/modding-host-api.md.
+// Subscribe to one of the game's hook points; EVENTS.md lists every one.
 RECOMP_CALLBACK("*", rs64_on_mission_frame_pads) void on_pads(void) {
 }
 ```
 
-`rs64_api.h` also imports the base game's helpers: `rs64_draw_dist`, `rs64_terrain_dist`, `rs64_tgrid_base` (the relocated terrain-grid tables) and `rs64_relocated` (where a co-op per-player field moved). Use `rs64_event_return(v)` from a callback at a function-entry hook point to make the game function return `v`, and `rs64_event_set_gpr` / `rs64_event_set_fpr` at any hook point to change a register (for example `rs64_event_set_fpr(20, dt)` at `rs64_on_mission_frame_dt` sets the frame time). `recomp_printf` prints to the game's console.
+[EVENTS.md](EVENTS.md) lists every event and what a callback can read, change or return there. `rs64_api.h` also imports the base game's helpers: `rs64_draw_dist`, `rs64_terrain_dist`, `rs64_tgrid_base` (the relocated terrain-grid tables) and `rs64_relocated` (where a co-op per-player field moved). Use `rs64_event_return(v)` from a callback at a function-entry hook point to make the game function return `v`, and `rs64_event_set_gpr` / `rs64_event_set_fpr` at any hook point to change a register (for example `rs64_event_set_fpr(20, dt)` at `rs64_on_mission_frame_dt` sets the frame time). `recomp_printf` prints to the game's console.
 
 ### Building
 

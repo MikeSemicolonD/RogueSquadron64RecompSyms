@@ -33,6 +33,10 @@ RECOMP_IMPORT("*", void rs64_event_return(unsigned int r2))
 RECOMP_IMPORT("*", void rs64_event_set_gpr(unsigned int reg, unsigned int value))
 RECOMP_IMPORT("*", void rs64_event_set_fpr(unsigned int reg, float value))
 
+// From an rs64_on_* callback: a register as it was at the hook point (a callback only gets a0-a3 as arguments), e.g. rs64_event_get_gpr(16) for s0. 0 outside a callback.
+RECOMP_IMPORT("*", unsigned int rs64_event_get_gpr(unsigned int reg))
+RECOMP_IMPORT("*", float rs64_event_get_fpr(unsigned int reg))
+
 // The player's draw-distance multiplier (1.0 = the game's own) and the terrain reach / fog multiplier that follows it (capped at 2.5).
 RECOMP_IMPORT("*", float rs64_draw_dist(void))
 RECOMP_IMPORT("*", float rs64_terrain_dist(void))
