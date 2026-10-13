@@ -77,7 +77,7 @@ RECOMP_CALLBACK("*", rs64_on_mission_frame_pads) void on_pads(void) {
 }
 ```
 
-`rs64_api.h` also imports the base game's helpers: `rs64_draw_dist`, `rs64_terrain_dist`, `rs64_tgrid_base` (the relocated terrain-grid tables) and `rs64_relocated` (where a co-op per-player field moved). Use `rs64_event_return(v)` from a callback at a function-entry hook point to make the game function return `v`.
+`rs64_api.h` also imports the base game's helpers: `rs64_draw_dist`, `rs64_terrain_dist`, `rs64_tgrid_base` (the relocated terrain-grid tables) and `rs64_relocated` (where a co-op per-player field moved). Use `rs64_event_return(v)` from a callback at a function-entry hook point to make the game function return `v`, and `rs64_event_set_gpr` / `rs64_event_set_fpr` at any hook point to change a register (for example `rs64_event_set_fpr(20, dt)` at `rs64_on_mission_frame_dt` sets the frame time).
 
 ### Building
 
@@ -95,7 +95,7 @@ The game repository's [tools/mods/code_mod.cmake](https://github.com/MikeSemicol
 
 The recomp fixes about 190 game functions with hooks and instruction patches of its own (crash guards, pacing, the co-op data relocation).
 
-- **`RECOMP_HOOK` on one works.** The game rebuilds the function with your hook and re-applies its own patches.
+- **`RECOMP_HOOK` on one works.** The game rebuilds the function with your hook and re-applies its own patches. Your hook runs before the base game's entry hook, and if a base hook returns from the function early, your `RECOMP_HOOK_RETURN` doesn't run for that call.
 - **`RECOMP_PATCH` on one is refused** with "Attempted to replace a function that's been patched by the base recomp", because your copy would drop the fix.
 - **`RECOMP_FORCE_PATCH`** replaces it anyway. Your copy must then carry the base patches itself, as the game's `mods/long-tow-cable` does.
 
