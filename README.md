@@ -16,7 +16,7 @@ A code mod is MIPS C that RecompModTool packs into a `.nrm`. The game loads it a
 
 - **MIPS GCC** (`mips64-elf-gcc` and `mips64-elf-ld`). Windows builds are at [n64-tools/gcc-toolchain-mips64](https://github.com/n64-tools/gcc-toolchain-mips64/releases).
 - **RecompModTool**, built from [N64ModernRuntime](https://github.com/MikeSemicolonD/N64ModernRuntime) (`N64Recomp/`, target `RecompModTool`).
-- **`rs64_api.h`**, the macros and base-game imports, from the game repository's [mods/sdk/](https://github.com/MikeSemicolonD/RogueSquadron64Recomp/tree/main/mods/sdk).
+- **The SDK headers** from the game repository's [mods/sdk/](https://github.com/MikeSemicolonD/RogueSquadron64Recomp/tree/main/mods/sdk): `rs64_api.h` (the macros and this game's imports) plus the standard recomp modding API, `recomputils.h` (`recomp_alloc` / `recomp_free`), `recompconfig.h` (config options, save and mod paths) and `recompdata.h` (hashmaps, hashsets, slotmaps), as in other recomps' mod templates. Copy the whole folder, including `PR/`. `recomp_printf` isn't provided yet.
 
 Add this repository to your mod as a submodule:
 
@@ -30,7 +30,7 @@ git submodule add https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms.gi
 my-mod/
   mod.toml       RecompModTool manifest
   mod.ld         linker script (copy one from the game's mods/*/mod.ld)
-  rs64_api.h
+  sdk/           the game's mods/sdk folder (rs64_api.h, recomputils.h, recompconfig.h, recompdata.h, PR/)
   src/my_mod.c
   syms/          this repository
 ```
@@ -82,7 +82,7 @@ RECOMP_CALLBACK("*", rs64_on_mission_frame_pads) void on_pads(void) {
 ### Building
 
 ```
-mips64-elf-gcc -mips2 -mabi=32 -O2 -G0 -mno-abicalls -fomit-frame-pointer -fno-builtin -fno-optimize-sibling-calls -nostdinc -I . -c src/my_mod.c -o build/my_mod.o
+mips64-elf-gcc -mips2 -mabi=32 -O2 -G0 -mno-abicalls -fomit-frame-pointer -fno-builtin -fno-optimize-sibling-calls -nostdinc -I sdk -c src/my_mod.c -o build/my_mod.o
 mips64-elf-ld -nostdlib -T mod.ld --unresolved-symbols=ignore-all --emit-relocs --noinhibit-exec -e 0 build/my_mod.o -o build/mod.elf
 RecompModTool mod.toml build
 ```
