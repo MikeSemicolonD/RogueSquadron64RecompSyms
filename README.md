@@ -103,15 +103,17 @@ The recomp fixes about 90 game functions with hooks and instruction patches of i
 
 ### Instruction patches
 
-To change only a few instructions (a constant, a branch), don't copy the function: ship `instruction_patches.json` next to your `mod.json`, or in the `.nrm` with `additional_files = [ "instruction_patches.json" ]` in `mod.toml`:
+To change only a few instructions (a constant, a limit), don't copy the function: add entries to `mod.toml`.
 
-```json
-{ "instruction_patches": [
-  { "func": "loadEffectModelInstancePool", "section_rom": 679216, "func_vram": 2148196664, "vram": 2148196668, "value": 872717056, "expect": 604256800 }
-] }
+```toml
+[[patches.instruction]]
+func = "loadEffectModelInstancePool"   # a function name from rogue_squadron.syms.toml
+vram = 0x800AE13C                      # the instruction's address in it
+expect_asm = "addiu $a0, $zero, 0x3A20" # the game's original instruction
+asm = "ori $a0, $zero, 0x9B00"          # what replaces it
 ```
 
-`section_rom` and `func_vram` are the function's section `rom` and its `vram` in `rogue_squadron.syms.toml`; `vram` is the instruction; `value` the new word; `expect` the game's original word, checked at load so a stale file is refused instead of corrupting code. The game rebuilds each patched function with your patches, its own patches and any hooks on it. Two mods writing different words to one instruction conflict. The game's `mods/long-tow-cable` is a complete example (no code at all).
+RecompModTool assembles `asm` and `expect_asm` with your MIPS GCC (`--as <gcc>`; the mod template passes it) and packs the result into the `.nrm` as `instruction_patches.json`. Instead of text you can give words: `value = 0x...` for the new one (needed for branches and jumps, which can't be assembled on their own), and `expect = 0x...` for the original. Or pass `--rom <rom.z64>` (`-DGAME_ROM=` in the template) to read the original from the game, which also checks every `expect` at build time. Either way the game checks each original word when it loads the mod, so a stale patch is refused with the address instead of corrupting code. It rebuilds each patched function with your patches, its own patches and any hooks on it. Two mods writing different words to one instruction conflict. A mod can be only patches: no sources and no `elf_path`. The game's `mods/long-tow-cable` is a complete example: 21 patches and no code.
 
 ## Updating
 
