@@ -16,7 +16,7 @@ A code mod is MIPS C that RecompModTool packs into a `.nrm`. The game loads it a
 
 - **MIPS GCC** (`mips64-elf-gcc` and `mips64-elf-ld`). Windows builds are at [n64-tools/gcc-toolchain-mips64](https://github.com/n64-tools/gcc-toolchain-mips64/releases).
 - **RecompModTool**, built from [N64ModernRuntime](https://github.com/MikeSemicolonD/N64ModernRuntime) (`N64Recomp/`, target `RecompModTool`).
-- **The SDK headers** from the game repository's [mods/sdk/](https://github.com/MikeSemicolonD/RogueSquadron64Recomp/tree/main/mods/sdk): `rs64_api.h` (the macros and this game's imports) plus the standard recomp modding API, `recomputils.h` (`recomp_alloc` / `recomp_free`), `recompconfig.h` (config options, save and mod paths) and `recompdata.h` (hashmaps, hashsets, slotmaps), as in other recomps' mod templates. Copy the whole folder, including `PR/`. `recomp_printf` isn't provided yet.
+- **The SDK headers** from the game repository's [mods/sdk/](https://github.com/MikeSemicolonD/RogueSquadron64Recomp/tree/main/mods/sdk): `rs64_api.h` (the macros and this game's imports) plus the standard recomp modding API, `recomputils.h` (`recomp_alloc` / `recomp_free`), `recompconfig.h` (config options, save and mod paths) and `recompdata.h` (hashmaps, hashsets, slotmaps), as in other recomps' mod templates. Copy the whole folder, including `PR/`. `recomp_printf` prints to the game's console.
 
 Add this repository to your mod as a submodule:
 
