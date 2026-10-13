@@ -1,24 +1,26 @@
 # RogueSquadron64RecompSyms
 
-Symbol files for [Rogue Squadron 64 Recompiled](https://github.com/MikeSemicolonD/RogueSquadron64Recomp) (*Star Wars: Rogue Squadron*, N64, USA v1.0). Code mods (`.nrm`) are built against them, so you can write a mod without cloning or building the game.
+Symbols and the mod SDK for [Rogue Squadron 64 Recompiled](https://github.com/MikeSemicolonD/RogueSquadron64Recomp) (*Star Wars: Rogue Squadron*, N64, USA v1.0). Code mods (`.nrm`) are built against them, so you can write a mod without cloning or building the game.
 
-| File | Contents |
+| Path | Contents |
 |---|---|
 | `rogue_squadron.syms.toml` | Every game function, by section (main code and the three overlays): name, address, size. |
 | `rogue_squadron.datasyms.toml` | Data symbols at their original addresses. |
 | `rogue_squadron.datasyms.mods.toml` | The data symbols mods link against: the same list, with the co-op per-player fields moved to where the recomp keeps them. |
+| `include/` | The SDK headers: `rs64_api.h` (the mod macros and this game's imports) and the standard recomp modding API, `recomputils.h` (`recomp_alloc`, `recomp_free`, `recomp_printf`), `recompconfig.h` (config options, save and mod paths) and `recompdata.h` (hashmaps, hashsets, slotmaps), as in other recomps' mod templates. |
 
-The files hold only names, addresses and sizes, no game code.
+The symbol files hold only names, addresses and sizes, no game code.
 
 ## Making a code mod
+
+The quickest start is the [mod template](https://github.com/MikeSemicolonD/RogueSquadron64RecompModTemplate): it has this repository as its `syms` submodule, a working example mod and a one-command build.
 
 A code mod is MIPS C that RecompModTool packs into a `.nrm`. The game loads it at startup and recompiles it with LiveRecomp. You need:
 
 - **MIPS GCC** (`mips64-elf-gcc` and `mips64-elf-ld`). Windows builds are at [n64-tools/gcc-toolchain-mips64](https://github.com/n64-tools/gcc-toolchain-mips64/releases).
 - **RecompModTool**, built from [N64ModernRuntime](https://github.com/MikeSemicolonD/N64ModernRuntime) (`N64Recomp/`, target `RecompModTool`).
-- **The SDK headers** from the game repository's [mods/sdk/](https://github.com/MikeSemicolonD/RogueSquadron64Recomp/tree/main/mods/sdk): `rs64_api.h` (the macros and this game's imports) plus the standard recomp modding API, `recomputils.h` (`recomp_alloc` / `recomp_free`), `recompconfig.h` (config options, save and mod paths) and `recompdata.h` (hashmaps, hashsets, slotmaps), as in other recomps' mod templates. Copy the whole folder, including `PR/`. `recomp_printf` prints to the game's console.
 
-Add this repository to your mod as a submodule:
+To set one up without the template, add this repository to your mod as a submodule:
 
 ```
 git submodule add https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms.git syms
@@ -29,10 +31,9 @@ git submodule add https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms.gi
 ```
 my-mod/
   mod.toml       RecompModTool manifest
-  mod.ld         linker script (copy one from the game's mods/*/mod.ld)
-  sdk/           the game's mods/sdk folder (rs64_api.h, recomputils.h, recompconfig.h, recompdata.h, PR/)
+  mod.ld         linker script (the template's, or any of the game's mods/*/mod.ld)
   src/my_mod.c
-  syms/          this repository
+  syms/          this repository (symbols and include/)
 ```
 
 `mod.toml`:
@@ -58,10 +59,11 @@ data_reference_syms_files = [ "syms/rogue_squadron.datasyms.mods.toml" ]
 
 ### Writing the code
 
-Refer to game functions and data by their names in these files. A function still called `func_XXXXXXXX` is one nobody has named yet; use that name.
+Refer to game functions and data by their names in the symbol files. A function still called `func_XXXXXXXX` is one nobody has named yet; use that name.
 
 ```c
 #include "rs64_api.h"
+#include "recomputils.h"
 
 // Replace a game function.
 RECOMP_PATCH unsigned int getSecondaryWeaponCount(unsigned int craft, unsigned int weapon) {
@@ -70,6 +72,7 @@ RECOMP_PATCH unsigned int getSecondaryWeaponCount(unsigned int craft, unsigned i
 
 // Run before a game function (RECOMP_HOOK_RETURN runs after it returns).
 RECOMP_HOOK("runInMissionFrame") void on_mission_frame(void) {
+    recomp_printf("mission running\n");
 }
 
 // Subscribe to one of the game's hook points; the full list is in the game's docs/modding-host-api.md.
@@ -77,19 +80,19 @@ RECOMP_CALLBACK("*", rs64_on_mission_frame_pads) void on_pads(void) {
 }
 ```
 
-`rs64_api.h` also imports the base game's helpers: `rs64_draw_dist`, `rs64_terrain_dist`, `rs64_tgrid_base` (the relocated terrain-grid tables) and `rs64_relocated` (where a co-op per-player field moved). Use `rs64_event_return(v)` from a callback at a function-entry hook point to make the game function return `v`, and `rs64_event_set_gpr` / `rs64_event_set_fpr` at any hook point to change a register (for example `rs64_event_set_fpr(20, dt)` at `rs64_on_mission_frame_dt` sets the frame time).
+`rs64_api.h` also imports the base game's helpers: `rs64_draw_dist`, `rs64_terrain_dist`, `rs64_tgrid_base` (the relocated terrain-grid tables) and `rs64_relocated` (where a co-op per-player field moved). Use `rs64_event_return(v)` from a callback at a function-entry hook point to make the game function return `v`, and `rs64_event_set_gpr` / `rs64_event_set_fpr` at any hook point to change a register (for example `rs64_event_set_fpr(20, dt)` at `rs64_on_mission_frame_dt` sets the frame time). `recomp_printf` prints to the game's console.
 
 ### Building
 
 ```
-mips64-elf-gcc -mips2 -mabi=32 -O2 -G0 -mno-abicalls -fomit-frame-pointer -fno-builtin -fno-optimize-sibling-calls -nostdinc -I sdk -c src/my_mod.c -o build/my_mod.o
+mips64-elf-gcc -mips2 -mabi=32 -O2 -G0 -mno-abicalls -fomit-frame-pointer -fno-builtin -fno-optimize-sibling-calls -nostdinc -I syms/include -c src/my_mod.c -o build/my_mod.o
 mips64-elf-ld -nostdlib -T mod.ld --unresolved-symbols=ignore-all --emit-relocs --noinhibit-exec -e 0 build/my_mod.o -o build/mod.elf
 RecompModTool mod.toml build
 ```
 
 ld reports every call into the game as out of range; that's expected, because RecompModTool resolves those calls by name. Keep `-fno-optimize-sibling-calls`: GCC otherwise turns a final call into a tail jump that LiveRecomp can't recompile. Copy `build/my_mod.nrm` into the game's `mods/` folder and enable it in the Mods panel (F1) or `mods.json`.
 
-The game repository's [tools/mods/code_mod.cmake](https://github.com/MikeSemicolonD/RogueSquadron64Recomp/blob/main/tools/mods/code_mod.cmake) wraps these steps (`add_code_mod`). Its `mods/infinite-secondary`, `mods/any-craft` and `mods/larger-object-pool` folders are complete examples.
+The game repository's `mods/infinite-secondary`, `mods/any-craft` and `mods/larger-object-pool` folders are more examples.
 
 ### Functions the base game patches
 
@@ -101,6 +104,6 @@ The recomp fixes about 190 game functions with hooks and instruction patches of 
 
 ## Updating
 
-These files follow the game's function names, which change as the decomp names more functions. Before releasing a mod, update the submodule (`git submodule update --remote syms`) and rebuild. A renamed function shows up as a RecompModTool error, not as a broken mod.
+The symbols follow the game's function names, which change as the decomp names more functions, and the headers follow the game's exports. Before releasing a mod, update the submodule (`git submodule update --remote syms`) and rebuild. A renamed function shows up as a RecompModTool error, not as a broken mod.
 
-Maintainers regenerate the files from the game repository with `cmake --build build --config Debug --target dump_syms`, commit them here, then bump the game's `syms` submodule.
+Maintainers regenerate the symbol files from the game repository with `cmake --build build --config Debug --target dump_syms` and edit `include/` with the game's exports, commit here, then bump the game's `syms` submodule.
