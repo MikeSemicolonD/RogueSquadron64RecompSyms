@@ -5,8 +5,7 @@ Symbols and the mod SDK for [Rogue Squadron 64 Recompiled](https://github.com/Mi
 | Path | Contents |
 |---|---|
 | `rogue_squadron.syms.toml` | Every game function, by section (main code and the three overlays): name, address, size. |
-| `rogue_squadron.datasyms.toml` | Data symbols at their original addresses. |
-| `rogue_squadron.datasyms.mods.toml` | The data symbols mods link against: the same list, with the co-op per-player fields moved to where the recomp keeps them. |
+| `rogue_squadron.datasyms.toml` | Data symbols at their original addresses; mods link against this. While the multiplayer mod is enabled, its per-player fields (`gObjectiveCounts` and others) live in host RAM: read them through `rs64_relocated(&field)`. |
 | `include/` | The SDK headers: `rs64_api.h` (the mod macros and this game's imports) and the standard recomp modding API, `recomputils.h` (`recomp_alloc`, `recomp_free`, `recomp_printf`), `recompconfig.h` (config options, save and mod paths) and `recompdata.h` (hashmaps, hashsets, slotmaps), as in other recomps' mod templates. |
 
 The symbol files hold only names, addresses and sizes, no game code.
@@ -31,7 +30,7 @@ git submodule add https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms.gi
 ```
 my-mod/
   mod.toml       RecompModTool manifest
-  mod.ld         linker script (the template's, or any of the game's mods/*/mod.ld)
+  mod.ld         optional linker script; without one, use syms/include/mod.ld
   src/my_mod.c
   syms/          this repository (symbols and include/)
 ```
@@ -54,7 +53,7 @@ enabled_by_default = true
 elf_path = "build/mod.elf"
 mod_filename = "my_mod"
 func_reference_syms_file = "syms/rogue_squadron.syms.toml"
-data_reference_syms_files = [ "syms/rogue_squadron.datasyms.mods.toml" ]
+data_reference_syms_files = [ "syms/rogue_squadron.datasyms.toml" ]
 ```
 
 ### Writing the code
@@ -86,7 +85,7 @@ RECOMP_CALLBACK("*", rs64_on_mission_frame_pads) void on_pads(void) {
 
 ```
 mips64-elf-gcc -mips2 -mabi=32 -O2 -G0 -mno-abicalls -fomit-frame-pointer -fno-builtin -fno-optimize-sibling-calls -nostdinc -I syms/include -c src/my_mod.c -o build/my_mod.o
-mips64-elf-ld -nostdlib -T mod.ld --unresolved-symbols=ignore-all --emit-relocs --noinhibit-exec -e 0 build/my_mod.o -o build/mod.elf
+mips64-elf-ld -nostdlib -T syms/include/mod.ld --unresolved-symbols=ignore-all --emit-relocs --noinhibit-exec -e 0 build/my_mod.o -o build/mod.elf
 RecompModTool mod.toml build
 ```
 
@@ -96,11 +95,23 @@ The game repository's `mods/infinite-secondary`, `mods/any-craft` and `mods/larg
 
 ### Functions the base game patches
 
-The recomp fixes about 190 game functions with hooks and instruction patches of its own (crash guards, pacing, the co-op data relocation).
+The recomp fixes about 90 game functions with hooks and instruction patches of its own (crash guards, pacing, draw distance).
 
 - **`RECOMP_HOOK` on one works.** The game rebuilds the function with your hook and re-applies its own patches. Your hook runs before the base game's entry hook, and if a base hook returns from the function early, your `RECOMP_HOOK_RETURN` doesn't run for that call.
 - **`RECOMP_PATCH` on one is refused** with "Attempted to replace a function that's been patched by the base recomp", because your copy would drop the fix.
-- **`RECOMP_FORCE_PATCH`** replaces it anyway. Your copy must then carry the base patches itself, as the game's `mods/long-tow-cable` does.
+- **`RECOMP_FORCE_PATCH`** replaces it anyway. Your copy must then carry the base patches itself.
+
+### Instruction patches
+
+To change only a few instructions (a constant, a branch), don't copy the function: ship `instruction_patches.json` next to your `mod.json`, or in the `.nrm` with `additional_files = [ "instruction_patches.json" ]` in `mod.toml`:
+
+```json
+{ "instruction_patches": [
+  { "func": "loadEffectModelInstancePool", "section_rom": 679216, "func_vram": 2148196664, "vram": 2148196668, "value": 872717056, "expect": 604256800 }
+] }
+```
+
+`section_rom` and `func_vram` are the function's section `rom` and its `vram` in `rogue_squadron.syms.toml`; `vram` is the instruction; `value` the new word; `expect` the game's original word, checked at load so a stale file is refused instead of corrupting code. The game rebuilds each patched function with your patches, its own patches and any hooks on it. Two mods writing different words to one instruction conflict. The game's `mods/long-tow-cable` is a complete example (no code at all).
 
 ## Updating
 
