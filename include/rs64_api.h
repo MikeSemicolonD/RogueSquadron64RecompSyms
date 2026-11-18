@@ -75,6 +75,8 @@ RECOMP_IMPORT("*", int rs64_destroy_object(const char* name))
 RECOMP_IMPORT("*", int rs64_key_down(const char* key))
 // The pilot (save slot, 0-based) chosen on the account screen, -1 before one is.
 RECOMP_IMPORT("*", int rs64_save_slot(void))
+// Sets a ray-traced light preset from the next frame: preset_json is one roguesq_lights.json preset object (up to 16 KB), NULL removes it. 0, -1 no name, -2 bad JSON.
+RECOMP_IMPORT("*", int rs64_light_set(const char* name, const char* preset_json))
 
 // The level map's cell: 25 heights (the HMP's units) and its texture id; set_cell's tex < 0 keeps the texture. 0 ok, -1 no map, -2 out of range, -3 too many tiles.
 RECOMP_IMPORT("*", int rs64_terrain_get_cell(unsigned int col, unsigned int row, signed char heights[25], unsigned short* tex))

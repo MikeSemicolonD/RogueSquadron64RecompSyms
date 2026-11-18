@@ -54,7 +54,8 @@ Register numbers: `v0` 2, `a0`-`a3` 4-7, `s0`-`s7` 16-23. Float registers are `f
 | `rs64_on_path_point` | An NPC reached a path event: `a0` = its DAT record, `a1` = its name | |
 | `rs64_on_objective_state` | A mod level's own objective changed: `a0` = the objective (1-4), `a1` = 1 done / 0 failed | |
 | `rs64_on_player_damage` (**entry**) | Damage reaches a player's craft: `a0` = its record (player 1 is 0x80137DBC), `a1` = the damage as float bits | Replace `a1` (5) to scale it; return to take none |
-| `rs64_on_player_fire` (**entry**) | A player craft fires a laser bolt (not the Y-wing or snowspeeder yet): `a0` = the weapon context, `a1` = the hardpoint | Return to skip the bolt |
+| `rs64_on_player_fire` (**entry**) | A player craft fires: `a0` = the weapon context, `a1` = the hardpoint | Return to skip the shot |
+| `rs64_on_camera` | A camera's projection is set up: `a0` = the camera (`+0x20` FOV in degrees, `+0x24` near, `+0x28` far) | Change those fields in memory (they also drive the game's view tests) |
 
 ## Any state
 
@@ -64,7 +65,7 @@ Register numbers: `v0` 2, `a0`-`a3` 4-7, `s0`-`s7` 16-23. Float registers are `f
 | `rs64_on_state_changed` | The game state changed: `a0` = the new state number, `a1` = the old one | Name it with `rs64_state_id` |
 | `rs64_on_cutscene` | A cutscene started (`a0` = 1) or ended (`a0` = 0) | |
 
-The events in Mission and Any state with no **entry** mark run with a copy of the game's registers: read `a0`-`a2`, but a register change has no effect there.
+`rs64_on_mission_ready`, `rs64_on_unit_destroyed`, `rs64_on_area_crossed`, `rs64_on_path_point`, `rs64_on_objective_state` and the Any state events run with a copy of the game's registers: read `a0`-`a2`, but a register change has no effect there.
 
 ## Audio and speech
 
@@ -93,5 +94,6 @@ The events in Mission and Any state with no **entry** mark run with a copy of th
 | `unsigned rs64_object_by_name(const char*)` / `float rs64_object_health(const char*)` / `int rs64_destroy_object(const char*)` | A level object's DAT record / its health 0-100 / destroy it (missions only) |
 | `int rs64_terrain_get_cell(...)` / `int rs64_terrain_set_cell(...)` | A level map cell's 25 heights and texture |
 | `int rs64_key_down(const char* key)` / `int rs64_save_slot(void)` | A keyboard key by SDL name is down / the chosen pilot, -1 before one |
+| `int rs64_light_set(const char* name, const char* preset_json)` | Sets a ray-traced light preset (one `roguesq_lights.json` preset object) from the next frame; `NULL` removes it |
 
 The standard recomp modding API (`recomp_alloc`, `recomp_printf`, `recomp_get_config_*`, the `recomputil_*` collections) is in `include/recomputils.h`, `recompconfig.h` and `recompdata.h`.
