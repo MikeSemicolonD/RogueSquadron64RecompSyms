@@ -48,6 +48,23 @@ Register numbers: `v0` 2, `a0`-`a3` 4-7, `s0`-`s7` 16-23. Float registers are `f
 | `rs64_on_powerup_collect` | A power-up is being collected | Read `s1` (17), the power-up |
 | `rs64_on_walker_tripped` | An AT-AT accepts a tow-cable trip | Read `s1` (17), its extension (`+0x34` its DAT item) |
 | `rs64_on_radar` | After the radar's dots are placed | Read `s0` (16) = the radar, `s2` (18) = its centre |
+| `rs64_on_mission_ready` | The first mission frame, once the level's objects are loaded | Look objects up with `rs64_object_by_name` |
+| `rs64_on_unit_destroyed` | A unit's death effect starts: `a0` = its DAT record, `a1` = its name | |
+| `rs64_on_area_crossed` | A trigger area's effect runs: `a0` = its DAT record, `a1` = 1 entered / 0 left, `a2` = its name | |
+| `rs64_on_path_point` | An NPC reached a path event: `a0` = its DAT record, `a1` = its name | |
+| `rs64_on_objective_state` | A mod level's own objective changed: `a0` = the objective (1-4), `a1` = 1 done / 0 failed | |
+| `rs64_on_player_damage` (**entry**) | Damage reaches a player's craft: `a0` = its record (player 1 is 0x80137DBC), `a1` = the damage as float bits | Replace `a1` (5) to scale it; return to take none |
+| `rs64_on_player_fire` (**entry**) | A player craft fires a laser bolt (not the Y-wing or snowspeeder yet): `a0` = the weapon context, `a1` = the hardpoint | Return to skip the bolt |
+
+## Any state
+
+| Event | When | Mods can |
+|---|---|---|
+| `rs64_on_frame` | Every frame the game presents, in menus, cutscenes and missions: `a0` = the framebuffer | |
+| `rs64_on_state_changed` | The game state changed: `a0` = the new state number, `a1` = the old one | Name it with `rs64_state_id` |
+| `rs64_on_cutscene` | A cutscene started (`a0` = 1) or ended (`a0` = 0) | |
+
+The events in Mission and Any state with no **entry** mark run with a copy of the game's registers: read `a0`-`a2`, but a register change has no effect there.
 
 ## Audio and speech
 
@@ -56,6 +73,8 @@ Register numbers: `v0` 2, `a0`-`a3` 4-7, `s0`-`s7` 16-23. Float registers are `f
 | `rs64_on_song_active` | The song fade timer checks whether a song plays | Replace `v0` (2) |
 | `rs64_on_speech_response_1`, `rs64_on_speech_response_2` | A speech response checks whether speech is idle | Replace `v0` (2): 1 idle, 0 busy |
 | `rs64_on_hud_fonts` | The subtitle system allocates its fonts | Raise `a2` (6), the slot count |
+| `rs64_on_song_start` (**entry**) | A song starts: `a0` = its id | Replace `a0` (4) with another loaded song; return -1 to skip it |
+| `rs64_on_sound_3d` (**entry**) | A positioned sound effect starts: `a1` = its position; its id is the u16 at `sp+0x1A`, its volume the byte at `sp+0x1F` | Rewrite the id or volume in memory; return -1 to mute it |
 
 ## Base exports
 
@@ -65,5 +84,14 @@ Register numbers: `v0` 2, `a0`-`a3` 4-7, `s0`-`s7` 16-23. Float registers are `f
 | `float rs64_terrain_dist(void)` | The terrain reach and fog multiplier (follows the draw distance, capped at 2.5) |
 | `unsigned rs64_tgrid_base(unsigned original)` | Where a terrain-grid table now lives (other addresses pass through) |
 | `unsigned rs64_relocated(unsigned address)` | Where a co-op per-player field moved (other addresses pass through) |
+| `void rs64_state_id(char* buf, unsigned size)` / `int rs64_in_cutscene(void)` | The game state's id (`menu.main`, `mission`, ...) / non-zero during a cutscene |
+| `float rs64_frame_seconds(void)` / `float rs64_mission_seconds(void)` | One mission frame's game time / seconds since the mission started |
+| `int rs64_get_flag(const char*)` / `void rs64_set_flag(const char*, int)` | The flags native mods share |
+| `int rs64_fire_rule_event(const char* name, const char* object)` | Raises a level rules `when custom` |
+| `int rs64_run_rule_line(const char* line)` | Runs a level rules action line (`"message 4 Hold the bridge"`); 0 ran |
+| `int rs64_rule_var_get(const char*)` / `void rs64_rule_var_set(const char*, int)` | Level rules variables |
+| `unsigned rs64_object_by_name(const char*)` / `float rs64_object_health(const char*)` / `int rs64_destroy_object(const char*)` | A level object's DAT record / its health 0-100 / destroy it (missions only) |
+| `int rs64_terrain_get_cell(...)` / `int rs64_terrain_set_cell(...)` | A level map cell's 25 heights and texture |
+| `int rs64_key_down(const char* key)` / `int rs64_save_slot(void)` | A keyboard key by SDL name is down / the chosen pilot, -1 before one |
 
 The standard recomp modding API (`recomp_alloc`, `recomp_printf`, `recomp_get_config_*`, the `recomputil_*` collections) is in `include/recomputils.h`, `recompconfig.h` and `recompdata.h`.

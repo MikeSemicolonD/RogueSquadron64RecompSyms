@@ -47,4 +47,37 @@ RECOMP_IMPORT("*", unsigned int rs64_tgrid_base(unsigned int original))
 // Where a per-player field moved for co-op (the R1-R4 ranges); addresses outside them pass through.
 RECOMP_IMPORT("*", unsigned int rs64_relocated(unsigned int address))
 
+// The classified game state's id ("menu.main", "mission", ...) copied into buf (NUL-terminated, cut to size).
+RECOMP_IMPORT("*", void rs64_state_id(char* buf, unsigned int size))
+// Non-zero while a cutscene plays.
+RECOMP_IMPORT("*", int rs64_in_cutscene(void))
+// The game time one mission frame covers (1/30 s, or 1/60 s with 60 logic frames a second) / seconds since the mission started (0 outside one).
+RECOMP_IMPORT("*", float rs64_frame_seconds(void))
+RECOMP_IMPORT("*", float rs64_mission_seconds(void))
+
+// Process-wide int flags shared with native mods (unset reads 0).
+RECOMP_IMPORT("*", int rs64_get_flag(const char* name))
+RECOMP_IMPORT("*", void rs64_set_flag(const char* name, int value))
+
+// Level rules: raise a "when custom <name> [for <object>]" (object may be ""); run one action line as rules.txt writes it
+// ("message 4 Hold the bridge"; 0 ran, -1 does not read, -2 no mission, -3 no such action); read and write rule variables.
+RECOMP_IMPORT("*", int rs64_fire_rule_event(const char* name, const char* object))
+RECOMP_IMPORT("*", int rs64_run_rule_line(const char* line))
+RECOMP_IMPORT("*", int rs64_rule_var_get(const char* name))
+RECOMP_IMPORT("*", void rs64_rule_var_set(const char* name, int value))
+
+// Level objects by name, missions only: the DAT record (0 if none), health 0-100 (-1 if none), destroy as a lethal hit (0 done, -1 none, -2 already gone).
+RECOMP_IMPORT("*", unsigned int rs64_object_by_name(const char* name))
+RECOMP_IMPORT("*", float rs64_object_health(const char* name))
+RECOMP_IMPORT("*", int rs64_destroy_object(const char* name))
+
+// Non-zero while the keyboard key with that SDL name is down ("F7", "K", "Left Shift"); let players pick it with a string config option.
+RECOMP_IMPORT("*", int rs64_key_down(const char* key))
+// The pilot (save slot, 0-based) chosen on the account screen, -1 before one is.
+RECOMP_IMPORT("*", int rs64_save_slot(void))
+
+// The level map's cell: 25 heights (the HMP's units) and its texture id; set_cell's tex < 0 keeps the texture. 0 ok, -1 no map, -2 out of range, -3 too many tiles.
+RECOMP_IMPORT("*", int rs64_terrain_get_cell(unsigned int col, unsigned int row, signed char heights[25], unsigned short* tex))
+RECOMP_IMPORT("*", int rs64_terrain_set_cell(unsigned int col, unsigned int row, const signed char heights[25], int tex))
+
 #endif
