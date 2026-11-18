@@ -56,6 +56,8 @@ Register numbers: `v0` 2, `a0`-`a3` 4-7, `s0`-`s7` 16-23. Float registers are `f
 | `rs64_on_player_damage` (**entry**) | Damage reaches a player's craft: `a0` = its record (player 1 is 0x80137DBC), `a1` = the damage as float bits | Replace `a1` (5) to scale it; return to take none |
 | `rs64_on_player_fire` (**entry**) | A player craft fires: `a0` = the weapon context, `a1` = the hardpoint | Return to skip the shot |
 | `rs64_on_camera` | A camera's projection is set up: `a0` = the camera (`+0x20` FOV in degrees, `+0x24` near, `+0x28` far) | Change those fields in memory (they also drive the game's view tests) |
+| `rs64_on_npc_atst_tick` (**entry**) | An NPC AT-ST's update: `a0` = its NPC context, `a1` = the action (3 = tick), `a2` = `&dt` | Return with `r2` = 1 to skip it |
+| `rs64_on_atst_fire` (**entry**) | A walker fires one gun: `a0` = the walker's block, `a1` = the gun (0 node `a`, else node `b`) | Return to skip the shot |
 
 ## Any state
 
