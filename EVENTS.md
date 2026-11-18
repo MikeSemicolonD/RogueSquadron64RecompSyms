@@ -95,5 +95,7 @@ Register numbers: `v0` 2, `a0`-`a3` 4-7, `s0`-`s7` 16-23. Float registers are `f
 | `int rs64_terrain_get_cell(...)` / `int rs64_terrain_set_cell(...)` | A level map cell's 25 heights and texture |
 | `int rs64_key_down(const char* key)` / `int rs64_save_slot(void)` | A keyboard key by SDL name is down / the chosen pilot, -1 before one |
 | `int rs64_light_set(const char* name, const char* preset_json)` | Sets a ray-traced light preset (one `roguesq_lights.json` preset object) from the next frame; `NULL` removes it |
+| `int rs64_spawn_unit(const char* template_name, const char* name, const float pos[3])` | Spawns a copy of a level unit (missions only); the NPC slot or < 0 |
+| `void rs64_camera_view(const float view[5])` | Turns (yaw, pitch in degrees) and moves (x right, y down, z forward) the drawn view relative to the game's camera; `NULL` restores it |
 
 The standard recomp modding API (`recomp_alloc`, `recomp_printf`, `recomp_get_config_*`, the `recomputil_*` collections) is in `include/recomputils.h`, `recompconfig.h` and `recompdata.h`.

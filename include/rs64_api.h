@@ -77,6 +77,10 @@ RECOMP_IMPORT("*", int rs64_key_down(const char* key))
 RECOMP_IMPORT("*", int rs64_save_slot(void))
 // Sets a ray-traced light preset from the next frame: preset_json is one roguesq_lights.json preset object (up to 16 KB), NULL removes it. 0, -1 no name, -2 bad JSON.
 RECOMP_IMPORT("*", int rs64_light_set(const char* name, const char* preset_json))
+// Missions only: spawns a copy of the level unit named template_name at pos (map space, Y down), named name (NULL keeps the template's). The NPC slot, or < 0 (see spawn_unit in the host API docs).
+RECOMP_IMPORT("*", int rs64_spawn_unit(const char* template_name, const char* name, const float pos[3]))
+// Turns and moves the drawn view relative to the game's camera: view = yaw left, pitch up (degrees), then an offset x right, y down, z forward; NULL or all zero restores it. Drawing only.
+RECOMP_IMPORT("*", void rs64_camera_view(const float view[5]))
 
 // The level map's cell: 25 heights (the HMP's units) and its texture id; set_cell's tex < 0 keeps the texture. 0 ok, -1 no map, -2 out of range, -3 too many tiles.
 RECOMP_IMPORT("*", int rs64_terrain_get_cell(unsigned int col, unsigned int row, signed char heights[25], unsigned short* tex))
